@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * 脚手架
  * @author yutent<yutent.io@gmail.com>
@@ -8,18 +10,26 @@ const fs = require('iofs')
 const chalk = require('chalk')
 const path = require('path')
 
-const { do_init } = require('./lib/init')
-const { run, stop, restart, remove, status } = require('./lib/pm2')
-const { exec } = require('./lib/tools')
+var pm2
+var pkg = require('./package.json')
+var { do_init } = require('./lib/init')
+var { start, stop, restart, remove, status } = require('./lib/pm2')
 
-var pkg = fs.cat(path.join(__dirname, './package.json'))
 var { arch, platform, version } = process
 var os = { linux: 'Linux', darwin: 'MacOS', win: 'Windows' }
 var cwd = process.cwd()
 var args = process.argv.slice(2)
 var action = args.shift()
 
-pkg = JSON.parse(pkg)
+try {
+  pm2 = require('pm2/package.json')
+} catch (error) {
+  print('#'.repeat(64))
+  console.log(chalk.red('脚手架使用pm2作为守护进程, 请先安装pm2'))
+  console.log(chalk.green('npm i -g pm2'))
+  print('#'.repeat(64))
+  process.exit()
+}
 
 function print(...args) {
   args[0] = args[0].padEnd(20, ' ')
@@ -43,7 +53,7 @@ function print_help() {
   print(`${logo()}                     v${pkg.version},    作者: 宇天`)
   print('-'.repeat(64))
   print('node版本:  ' + version)
-  print('pm2 版本:  v' + exec('pm2 -v').trim())
+  print('pm2 版本:  v' + pm2.version)
   print(`当前系统:  ${os[platform]}(${arch})`)
   print('当前路径:  ' + chalk.red.underline(cwd))
   print('='.repeat(64))
@@ -66,7 +76,7 @@ switch (action) {
     break
 
   case 'start':
-    run(cwd, args[0])
+    start(cwd, args[0])
     break
 
   case 'stop':
@@ -95,6 +105,5 @@ switch (action) {
 
   default:
     print_help()
-    // console.log(exec('pm2 -v').trim())
     break
 }
